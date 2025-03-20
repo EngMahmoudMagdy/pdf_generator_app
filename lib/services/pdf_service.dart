@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter_html_to_pdf/flutter_html_to_pdf.dart';
+import 'package:htmltopdfwidgets/htmltopdfwidgets.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:open_file/open_file.dart';
@@ -164,5 +165,30 @@ class PdfService {
     </body>
     </html>
     ''';
+  }
+
+  void generatePdfFromMarkDown(String text, String s) async{
+    var filePath = 'test/{$s}.pdf';
+    var file = File(filePath);
+    final newpdf = Document();
+    List<Widget> widgets = await HTMLToPdf().convertMarkdown(text);
+    newpdf.addPage(MultiPage(
+        maxPages: 200,
+        build: (context) {
+          return widgets;
+        }));
+    await file.writeAsBytes(await newpdf.save());
+  }
+  void generatePdfFromHTMLText(String text, String s) async{
+    var filePath = 'test/{$s}.pdf';
+    var file = File(filePath);
+    final newpdf = Document();
+    List<Widget> widgets = await HTMLToPdf().convert(text);
+    newpdf.addPage(MultiPage(
+        maxPages: 200,
+        build: (context) {
+          return widgets;
+        }));
+    await file.writeAsBytes(await newpdf.save());
   }
 }
