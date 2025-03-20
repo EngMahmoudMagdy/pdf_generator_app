@@ -138,25 +138,26 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
-                const SizedBox(
-                  height: 20,
-                ),
-                ElevatedButton.icon(
-                  onPressed: () => {
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => const WriteTextPage(),
-                    ))
-                  },
-                  icon: const Icon(Icons.edit),
-                  label: const Text('Write Text to PDF'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 15,
-                    ),
+              ],
+
+              const SizedBox(
+                height: 20,
+              ),
+              ElevatedButton.icon(
+                onPressed: () => {
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => const WriteTextPage(),
+                  ))
+                },
+                icon: const Icon(Icons.edit),
+                label: const Text('Write Text to PDF'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 15,
                   ),
                 ),
-              ],
+              ),
             ],
           ),
         ),
