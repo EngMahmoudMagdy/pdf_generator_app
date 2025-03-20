@@ -17,6 +17,7 @@ dependencies:
   htmltopdfwidgets: ^1.0.9
   permission_handler: ^10.4.3
   open_file: ^3.3.2
+  file_picker: ^9.2.1
 
 dev_dependencies:
   flutter_test:

@@ -1,10 +1,13 @@
+import 'dart:html' as html;
 import 'dart:io';
-import 'package:flutter/services.dart';
+
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_html_to_pdf/flutter_html_to_pdf.dart';
 import 'package:htmltopdfwidgets/htmltopdfwidgets.dart';
+import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:open_file/open_file.dart';
 
 class PdfService {
   Future<File?> generatePdfFromHtml(String htmlContent, String fileName) async {
@@ -167,9 +170,7 @@ class PdfService {
     ''';
   }
 
-  void generatePdfFromMarkDown(String text, String s) async{
-    var filePath = 'test/{$s}.pdf';
-    var file = File(filePath);
+  void generatePdfFromMarkDown(String text, String pdfName) async {
     final newpdf = Document();
     List<Widget> widgets = await HTMLToPdf().convertMarkdown(text);
     newpdf.addPage(MultiPage(
@@ -177,11 +178,28 @@ class PdfService {
         build: (context) {
           return widgets;
         }));
-    await file.writeAsBytes(await newpdf.save());
+    final fileBytes = await newpdf.save();
+    if (fileBytes == null) {
+      print("Error: File bytes are null on web.");
+    }
+    if (kIsWeb) {
+      await savePdfWeb(newpdf);
+    } else {
+      saveFile(pdfName, fileBytes);
+    }
   }
-  void generatePdfFromHTMLText(String text, String s) async{
-    var filePath = 'test/{$s}.pdf';
-    var file = File(filePath);
+
+  Future<void> savePdfWeb(Document pdf) async {
+    final Uint8List pdfBytes = await pdf.save();
+    final blob = html.Blob([pdfBytes]);
+    final url = html.Url.createObjectUrlFromBlob(blob);
+    final anchor = html.AnchorElement(href: url)
+      ..setAttribute("download", "markdown_output.pdf")
+      ..click();
+    html.Url.revokeObjectUrl(url);
+  }
+
+  void generatePdfFromHTMLText(String text, String pdfName) async {
     final newpdf = Document();
     List<Widget> widgets = await HTMLToPdf().convert(text);
     newpdf.addPage(MultiPage(
@@ -189,6 +207,35 @@ class PdfService {
         build: (context) {
           return widgets;
         }));
-    await file.writeAsBytes(await newpdf.save());
+    final fileBytes = await newpdf.save();
+    if (fileBytes == null) {
+      print("Error: File bytes are null on web.");
+    }
+    if (kIsWeb) {
+      await savePdfWeb(newpdf);
+    } else {
+      saveFile(pdfName, fileBytes);
+    }
+  }
+
+  void saveFile(String name, List<int> pdfBytes) async {
+    try {
+      final outputPdfFile = await FilePicker.platform.saveFile(
+        dialogTitle: 'Save as PDF',
+        fileName: 'name.pdf',
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+      );
+
+      if (outputPdfFile != null) {
+        final pdfFile = File(outputPdfFile);
+        await pdfFile.writeAsBytes(pdfBytes);
+        OpenFile.open(pdfFile.path); // Open the saved PDF file
+      } else {
+        print("User canceled the file save dialog.");
+      }
+    } catch (e) {
+      print("Error saving PDF: $e");
+    }
   }
 }
