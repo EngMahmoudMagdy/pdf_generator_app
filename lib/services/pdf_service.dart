@@ -1,20 +1,13 @@
 import 'dart:html' as html;
 import 'dart:io';
-import 'dart:typed_data';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_html_to_pdf/flutter_html_to_pdf.dart';
 import 'package:htmltopdfwidgets/htmltopdfwidgets.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:open_file/open_file.dart';
-import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class PdfService {
   Future<File?> generatePdfFromHtml(String htmlContent, String fileName) async {
@@ -48,22 +41,22 @@ class PdfService {
                 pw.Header(
                   level: 0,
                   child: pw.Text('Sample PDF Report',
-                    style: pw.TextStyle(
-                      fontSize: 24,
-                      fontWeight: pw.FontWeight.bold,
-                      color: PdfColors.blue800
-                    )
-                  ),
+                      style: pw.TextStyle(
+                          fontSize: 24,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.blue800)),
                 ),
                 pw.Paragraph(
-                  text: 'Generated on: ${DateTime.now().toString().split('.')[0]}',
+                  text:
+                      'Generated on: ${DateTime.now().toString().split('.')[0]}',
                   style: pw.TextStyle(
                     fontStyle: pw.FontStyle.italic,
                   ),
                 ),
                 pw.Header(level: 1, text: '1. Introduction'),
                 pw.Paragraph(
-                  text: 'This is a sample PDF document generated from HTML template. It demonstrates various formatting options including sections, tables, images, and text styling.',
+                  text:
+                      'This is a sample PDF document generated from HTML template. It demonstrates various formatting options including sections, tables, images, and text styling.',
                 ),
                 pw.Header(level: 1, text: '2. Data Table Example'),
                 pw.Table.fromTextArray(
@@ -95,7 +88,9 @@ class PdfService {
                 pw.Header(level: 1, text: '3. Text Formatting Examples'),
                 pw.Bullet(text: 'Bold text for emphasis'),
                 pw.Bullet(text: 'Regular text for normal content'),
-                pw.Bullet(text: 'Colored text for highlighting important information'),
+                pw.Bullet(
+                    text:
+                        'Colored text for highlighting important information'),
                 pw.Bullet(text: 'Underlined text for specific details'),
                 pw.SizedBox(height: 20),
                 pw.Footer(
@@ -262,16 +257,13 @@ class PdfService {
 
   void generatePdfFromMarkDown(String text, String pdfName) async {
     final newpdf = Document();
-    List<Widget> widgets = await HTMLToPdf().convertMarkdown(text);
+    List<pw.Widget> widgets = await HTMLToPdf().convertMarkdown(text);
     newpdf.addPage(MultiPage(
         maxPages: 200,
         build: (context) {
           return widgets;
         }));
     final fileBytes = await newpdf.save();
-    if (fileBytes == null) {
-      print("Error: File bytes are null on web.");
-    }
     if (kIsWeb) {
       await savePdfWeb(newpdf);
     } else {
@@ -283,7 +275,7 @@ class PdfService {
     final Uint8List pdfBytes = await pdf.save();
     final blob = html.Blob([pdfBytes]);
     final url = html.Url.createObjectUrlFromBlob(blob);
-    final anchor = html.AnchorElement(href: url)
+    html.AnchorElement(href: url)
       ..setAttribute("download", "markdown_output.pdf")
       ..click();
     html.Url.revokeObjectUrl(url);
@@ -291,16 +283,13 @@ class PdfService {
 
   void generatePdfFromHTMLText(String text, String pdfName) async {
     final newpdf = Document();
-    List<Widget> widgets = await HTMLToPdf().convert(text);
+    List<pw.Widget> widgets = await HTMLToPdf().convert(text);
     newpdf.addPage(MultiPage(
         maxPages: 200,
         build: (context) {
           return widgets;
         }));
     final fileBytes = await newpdf.save();
-    if (fileBytes == null) {
-      print("Error: File bytes are null on web.");
-    }
     if (kIsWeb) {
       await savePdfWeb(newpdf);
     } else {

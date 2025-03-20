@@ -1,11 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:pdf/pdf.dart';
 import 'package:pdf_generator_app/write_text_page.dart';
+import 'package:printing/printing.dart';
 
 import 'services/pdf_service.dart';
-import 'package:printing/printing.dart';
-import 'package:pdf/pdf.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -138,22 +138,25 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
-              const SizedBox(height: 20,),
-              ElevatedButton.icon(
-                onPressed: () => {
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => const WriteTextPage(),
-                  ))
-                },
-                icon: const Icon(Icons.edit),
-                label: const Text('Write Text to PDF'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 15,
+                const SizedBox(
+                  height: 20,
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => const WriteTextPage(),
+                    ))
+                  },
+                  icon: const Icon(Icons.edit),
+                  label: const Text('Write Text to PDF'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 15,
+                    ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
