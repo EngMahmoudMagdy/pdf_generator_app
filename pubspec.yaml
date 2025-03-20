@@ -13,9 +13,11 @@ dependencies:
   pdf: ^3.10.4
   printing: ^5.11.0
   path_provider: ^2.1.0
-  flutter_html_to_pdf: ^0.7.0
   permission_handler: ^10.4.3
   open_file: ^3.3.2
+  html: ^0.15.4
+  flutter_html: ^3.0.0-beta.2
+  screenshot: ^2.1.0
 
 dev_dependencies:
   flutter_test:

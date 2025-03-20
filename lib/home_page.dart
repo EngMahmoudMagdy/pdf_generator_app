@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'services/pdf_service.dart';
+import 'package:printing/printing.dart';
+import 'package:pdf/pdf.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -46,6 +48,16 @@ class _HomePageState extends State<HomePage> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+    }
+  }
+
+  Future<void> _previewPdf() async {
+    if (_generatedPdfFile != null) {
+      await Printing.layoutPdf(
+        onLayout: (_) => _generatedPdfFile!.readAsBytes(),
+        name: 'Sample PDF Report',
+        format: PdfPageFormat.a4,
       );
     }
   }
@@ -99,7 +111,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               const SizedBox(height: 20),
-              if (_generatedPdfFile != null)
+              if (_generatedPdfFile != null) ...[
                 ElevatedButton.icon(
                   onPressed: () => _pdfService.openPdf(_generatedPdfFile!),
                   icon: const Icon(Icons.remove_red_eye),
@@ -111,6 +123,19 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 10),
+                ElevatedButton.icon(
+                  onPressed: _previewPdf,
+                  icon: const Icon(Icons.preview),
+                  label: const Text('Preview PDF'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 15,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
