@@ -9,6 +9,8 @@ import 'package:open_file/open_file.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:file_selector/file_selector.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class PdfService {
   // Generate PDF document (works on all platforms)
@@ -96,6 +98,9 @@ class PdfService {
     return pdf;
   }
 
+  // Check if running on desktop platform
+  bool get isDesktop => !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+
   // Platform-specific method to save and return the PDF file
   Future<File?> generatePdfFromHtml(String htmlContent, String fileName) async {
     try {
@@ -103,10 +108,36 @@ class PdfService {
       
       if (kIsWeb) {
         // For web, we can't return a File object
-        // Instead, we'll handle this in the UI layer with Printing package
         return null;
+      } else if (isDesktop) {
+        // For desktop platforms, use file_selector
+        final Uint8List bytes = await pdf.save();
+        
+        // On macOS, we need to handle the file saving differently
+        if (Platform.isMacOS) {
+          final String? path = await getSaveLocationPath(fileName);
+          if (path == null) return null;
+          
+          final File file = File(path);
+          await file.writeAsBytes(bytes);
+          return file;
+        } else {
+          // For Windows and Linux
+          final FileSaveLocation? result = await getSaveLocation(
+            suggestedName: '$fileName.pdf',
+            acceptedTypeGroups: [
+              const XTypeGroup(label: 'PDF', extensions: ['pdf'])
+            ],
+          );
+          
+          if (result == null) return null;
+          
+          final File file = File(result.path);
+          await file.writeAsBytes(bytes);
+          return file;
+        }
       } else {
-        // For mobile platforms, save to file
+        // Mobile code remains the same
         // Request storage permission
         var status = await Permission.storage.request();
         if (!status.isGranted) {
@@ -130,32 +161,73 @@ class PdfService {
     }
   }
 
-  // View PDF - platform specific
-  Future<void> openPdf(File? file) async {
-    if (file == null) {
-      print('No file to open');
-      return;
-    }
-    
-    if (!kIsWeb) {
-      try {
-        await OpenFile.open(file.path);
-      } catch (e) {
-        print('Error opening PDF: $e');
-      }
+  // Helper method for macOS file saving
+  Future<String?> getSaveLocationPath(String fileName) async {
+    try {
+      final XFile? file = await getSaveLocation(
+        suggestedName: '$fileName.pdf',
+        acceptedTypeGroups: [
+          const XTypeGroup(label: 'PDF', extensions: ['pdf'])
+        ],
+      ).then((result) => result != null ? XFile(result.path) : null);
+      
+      return file?.path;
+    } catch (e) {
+      print('Error getting save location: $e');
+      
+      // Fallback for macOS
+      final Directory documentsDir = await getApplicationDocumentsDirectory();
+      return '${documentsDir.path}/$fileName.pdf';
     }
   }
 
-  // Preview PDF - works on all platforms
-  Future<void> previewPdf(String htmlContent, BuildContext context) async {
+  // Share PDF - platform specific
+  Future<void> sharePdf(String htmlContent, String fileName) async {
     final pdf = await generatePdfDocument(htmlContent);
     final bytes = await pdf.save();
     
-    await Printing.layoutPdf(
-      onLayout: (_) => bytes,
-      name: 'Sample PDF Report',
-      format: PdfPageFormat.a4,
-    );
+    if (kIsWeb) {
+      // Web code remains the same
+      // For web, use Printing package to download
+      await Printing.sharePdf(bytes: bytes, filename: '$fileName.pdf');
+    } else if (isDesktop) {
+      if (Platform.isMacOS) {
+        final String? path = await getSaveLocationPath(fileName);
+        if (path != null) {
+          final File file = File(path);
+          await file.writeAsBytes(bytes);
+          
+          // Open the file after saving on macOS
+          final Uri uri = Uri.file(file.path);
+          if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+            throw Exception('Could not launch $uri');
+          }
+        }
+      } else {
+        // Windows and Linux code remains the same
+        // For desktop, save to a user-selected location
+        final FileSaveLocation? result = await getSaveLocation(
+          suggestedName: '$fileName.pdf',
+          acceptedTypeGroups: [
+            const XTypeGroup(label: 'PDF', extensions: ['pdf'])
+          ],
+        );
+        
+        if (result != null) {
+          final File file = File(result.path);
+          await file.writeAsBytes(bytes);
+          // Open the file after saving
+          final Uri uri = Uri.file(file.path);
+          if (!await launchUrl(uri)) {
+            throw Exception('Could not launch $uri');
+          }
+        }
+      }
+    } else {
+      // Mobile code remains the same
+      // For mobile, use Printing package to share
+      await Printing.sharePdf(bytes: bytes, filename: '$fileName.pdf');
+    }
   }
 
   // Sample HTML template with sections, tables, images, and styled text
@@ -283,5 +355,106 @@ class PdfService {
     </body>
     </html>
     ''';
+  }
+  // View PDF - platform specific
+  Future<void> openPdf(File? file) async {
+    if (file == null) {
+      print('No file to open');
+      return;
+    }
+    
+    if (kIsWeb) {
+      // Web platform doesn't use this method
+      return;
+    } else if (isDesktop) {
+      // For desktop platforms, use url_launcher
+      try {
+        // For macOS, we need a different approach
+        if (Platform.isMacOS) {
+          // Use the file path directly with Process.run
+          final result = await Process.run('open', [file.path]);
+          if (result.exitCode != 0) {
+            throw Exception('Could not open file: ${result.stderr}');
+          }
+        } else {
+          // For Windows and Linux, use url_launcher
+          final Uri uri = Uri.file(file.path);
+          if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+            throw Exception('Could not launch $uri');
+          }
+        }
+      } catch (e) {
+        print('Error opening PDF: $e');
+        throw Exception('Failed to open PDF: $e');
+      }
+    } else {
+      // For mobile platforms, use open_file
+      try {
+        final result = await OpenFile.open(file.path);
+        if (result.type != ResultType.done) {
+          throw Exception('Could not open file: ${result.message}');
+        }
+      } catch (e) {
+        print('Error opening PDF: $e');
+        throw Exception('Failed to open PDF: $e');
+      }
+    }
+  }
+  
+  // Preview PDF - works on all platforms
+  Future<void> previewPdf(String htmlContent, BuildContext context) async {
+    try {
+      final pdf = await generatePdfDocument(htmlContent);
+      final bytes = await pdf.save();
+      
+      if (isDesktop) {
+        // For desktop platforms, save the file instead of printing
+        final String fileName = 'sample_report_${DateTime.now().millisecondsSinceEpoch}';
+        
+        if (Platform.isMacOS) {
+          // For macOS, save to a temporary file and open it
+          final Directory tempDir = await getTemporaryDirectory();
+          final String filePath = '${tempDir.path}/$fileName.pdf';
+          final File file = File(filePath);
+          await file.writeAsBytes(bytes);
+          
+          // Use Process.run to open the file with the default application
+          final result = await Process.run('open', [filePath]);
+          if (result.exitCode != 0) {
+            throw Exception('Could not open file: ${result.stderr}');
+          }
+        } else {
+          // For Windows and Linux
+          final FileSaveLocation? result = await getSaveLocation(
+            suggestedName: '$fileName.pdf',
+            acceptedTypeGroups: [
+              const XTypeGroup(label: 'PDF', extensions: ['pdf'])
+            ],
+          );
+          
+          if (result != null) {
+            final File file = File(result.path);
+            await file.writeAsBytes(bytes);
+            
+            // Open the file after saving
+            final Uri uri = Uri.file(file.path);
+            if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+              throw Exception('Could not open $uri');
+            }
+          }
+        }
+      } else {
+        // For web and mobile, use Printing package
+        await Printing.layoutPdf(
+          onLayout: (_) => Future.value(bytes),
+          name: 'Sample PDF Report',
+          format: PdfPageFormat.a4,
+          dynamicLayout: true,
+        );
+      }
+    } catch (e) {
+      print('Error in previewPdf: $e');
+      rethrow;
+    }
   }
 }

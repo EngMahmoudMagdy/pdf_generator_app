@@ -2,8 +2,6 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'services/pdf_service.dart';
-import 'package:printing/printing.dart';
-import 'package:pdf/pdf.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -55,12 +53,27 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _previewPdf() async {
-    if (_htmlContent != null) {
-      await _pdfService.previewPdf(_htmlContent!, context);
-    } else {
+    if (_htmlContent == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Generate a PDF first')),
       );
+      return;
+    }
+    
+    setState(() {
+      _isGenerating = true;
+    });
+    
+    try {
+      await _pdfService.previewPdf(_htmlContent!, context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error previewing PDF: ${e.toString()}')),
+      );
+    } finally {
+      setState(() {
+        _isGenerating = false;
+      });
     }
   }
 
@@ -127,7 +140,15 @@ class _HomePageState extends State<HomePage> {
               if (!kIsWeb && _generatedPdfFile != null) ...[
                 const SizedBox(height: 20),
                 ElevatedButton.icon(
-                  onPressed: () => _pdfService.openPdf(_generatedPdfFile),
+                  onPressed: () async {
+                    try {
+                      await _pdfService.openPdf(_generatedPdfFile);
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error opening PDF: ${e.toString()}')),
+                      );
+                    }
+                  },
                   icon: const Icon(Icons.remove_red_eye),
                   label: const Text('View Generated PDF'),
                   style: ElevatedButton.styleFrom(
