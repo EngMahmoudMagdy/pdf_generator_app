@@ -1,6 +1,9 @@
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:pdf_generator_app/write_text_page.dart';
+
 import 'services/pdf_service.dart';
 
 class HomePage extends StatefulWidget {
@@ -59,11 +62,11 @@ class _HomePageState extends State<HomePage> {
       );
       return;
     }
-    
+
     setState(() {
       _isGenerating = true;
     });
-    
+
     try {
       await _pdfService.previewPdf(_htmlContent!, context);
     } catch (e) {
@@ -145,7 +148,9 @@ class _HomePageState extends State<HomePage> {
                       await _pdfService.openPdf(_generatedPdfFile);
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error opening PDF: ${e.toString()}')),
+                        SnackBar(
+                            content:
+                                Text('Error opening PDF: ${e.toString()}')),
                       );
                     }
                   },
@@ -159,6 +164,24 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ],
+              const SizedBox(
+                height: 20,
+              ),
+              ElevatedButton.icon(
+                onPressed: () => {
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => const WriteTextPage(),
+                  ))
+                },
+                icon: const Icon(Icons.edit),
+                label: const Text('Write Text to PDF'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 15,
+                  ),
+                ),
+              ),
             ],
           ),
         ),

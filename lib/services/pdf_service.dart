@@ -1,23 +1,27 @@
+import 'dart:html' as html;
 import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
+import 'package:htmltopdfwidgets/htmltopdfwidgets.dart';
+import 'package:open_file/open_file.dart';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:open_file/open_file.dart';
-import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class PdfService {
   // Generate PDF document (works on all platforms)
   Future<pw.Document> generatePdfDocument(String htmlContent) async {
     // Create a PDF document
     final pdf = pw.Document();
-    
+
     // Add a page with content derived from HTML
     pdf.addPage(
       pw.Page(
@@ -28,9 +32,9 @@ class PdfService {
             children: [
               pw.Header(
                 level: 0,
-                child: pw.Text('Sample PDF Report', 
+                child: pw.Text('Sample PDF Report',
                   style: pw.TextStyle(
-                    fontSize: 24, 
+                    fontSize: 24,
                     fontWeight: pw.FontWeight.bold,
                     color: PdfColors.blue800
                   )
@@ -94,7 +98,7 @@ class PdfService {
         },
       ),
     );
-    
+
     return pdf;
   }
 
@@ -105,19 +109,19 @@ class PdfService {
   Future<File?> generatePdfFromHtml(String htmlContent, String fileName) async {
     try {
       final pdf = await generatePdfDocument(htmlContent);
-      
+
       if (kIsWeb) {
         // For web, we can't return a File object
         return null;
       } else if (isDesktop) {
         // For desktop platforms, use file_selector
         final Uint8List bytes = await pdf.save();
-        
+
         // On macOS, we need to handle the file saving differently
         if (Platform.isMacOS) {
           final String? path = await getSaveLocationPath(fileName);
           if (path == null) return null;
-          
+
           final File file = File(path);
           await file.writeAsBytes(bytes);
           return file;
@@ -129,9 +133,9 @@ class PdfService {
               const XTypeGroup(label: 'PDF', extensions: ['pdf'])
             ],
           );
-          
+
           if (result == null) return null;
-          
+
           final File file = File(result.path);
           await file.writeAsBytes(bytes);
           return file;
@@ -152,7 +156,7 @@ class PdfService {
         // Save the PDF to a file
         final File file = File(filePath);
         await file.writeAsBytes(await pdf.save());
-        
+
         return file;
       }
     } catch (e) {
@@ -170,11 +174,11 @@ class PdfService {
           const XTypeGroup(label: 'PDF', extensions: ['pdf'])
         ],
       ).then((result) => result != null ? XFile(result.path) : null);
-      
+
       return file?.path;
     } catch (e) {
       print('Error getting save location: $e');
-      
+
       // Fallback for macOS
       final Directory documentsDir = await getApplicationDocumentsDirectory();
       return '${documentsDir.path}/$fileName.pdf';
@@ -185,7 +189,7 @@ class PdfService {
   Future<void> sharePdf(String htmlContent, String fileName) async {
     final pdf = await generatePdfDocument(htmlContent);
     final bytes = await pdf.save();
-    
+
     if (kIsWeb) {
       // Web code remains the same
       // For web, use Printing package to download
@@ -196,7 +200,7 @@ class PdfService {
         if (path != null) {
           final File file = File(path);
           await file.writeAsBytes(bytes);
-          
+
           // Open the file after saving on macOS
           final Uri uri = Uri.file(file.path);
           if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
@@ -212,7 +216,7 @@ class PdfService {
             const XTypeGroup(label: 'PDF', extensions: ['pdf'])
           ],
         );
-        
+
         if (result != null) {
           final File file = File(result.path);
           await file.writeAsBytes(bytes);
@@ -362,7 +366,7 @@ class PdfService {
       print('No file to open');
       return;
     }
-    
+
     if (kIsWeb) {
       // Web platform doesn't use this method
       return;
@@ -400,24 +404,24 @@ class PdfService {
       }
     }
   }
-  
+
   // Preview PDF - works on all platforms
   Future<void> previewPdf(String htmlContent, BuildContext context) async {
     try {
       final pdf = await generatePdfDocument(htmlContent);
       final bytes = await pdf.save();
-      
+
       if (isDesktop) {
         // For desktop platforms, save the file instead of printing
         final String fileName = 'sample_report_${DateTime.now().millisecondsSinceEpoch}';
-        
+
         if (Platform.isMacOS) {
           // For macOS, save to a temporary file and open it
           final Directory tempDir = await getTemporaryDirectory();
           final String filePath = '${tempDir.path}/$fileName.pdf';
           final File file = File(filePath);
           await file.writeAsBytes(bytes);
-          
+
           // Use Process.run to open the file with the default application
           final result = await Process.run('open', [filePath]);
           if (result.exitCode != 0) {
@@ -431,11 +435,11 @@ class PdfService {
               const XTypeGroup(label: 'PDF', extensions: ['pdf'])
             ],
           );
-          
+
           if (result != null) {
             final File file = File(result.path);
             await file.writeAsBytes(bytes);
-            
+
             // Open the file after saving
             final Uri uri = Uri.file(file.path);
             if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
@@ -455,6 +459,69 @@ class PdfService {
     } catch (e) {
       print('Error in previewPdf: $e');
       rethrow;
+    }
+  }
+
+  void generatePdfFromMarkDown(String text, String pdfName) async {
+    final newpdf = Document();
+    List<pw.Widget> widgets = await HTMLToPdf().convertMarkdown(text);
+    newpdf.addPage(MultiPage(
+        maxPages: 200,
+        build: (context) {
+          return widgets;
+        }));
+    final fileBytes = await newpdf.save();
+    if (kIsWeb) {
+      await savePdfWeb(newpdf);
+    } else {
+      saveFile(pdfName, fileBytes);
+    }
+  }
+
+  Future<void> savePdfWeb(Document pdf) async {
+    final Uint8List pdfBytes = await pdf.save();
+    final blob = html.Blob([pdfBytes]);
+    final url = html.Url.createObjectUrlFromBlob(blob);
+    html.AnchorElement(href: url)
+      ..setAttribute("download", "markdown_output.pdf")
+      ..click();
+    html.Url.revokeObjectUrl(url);
+  }
+
+  void generatePdfFromHTMLText(String text, String pdfName) async {
+    final newpdf = Document();
+    List<pw.Widget> widgets = await HTMLToPdf().convert(text);
+    newpdf.addPage(MultiPage(
+        maxPages: 200,
+        build: (context) {
+          return widgets;
+        }));
+    final fileBytes = await newpdf.save();
+    if (kIsWeb) {
+      await savePdfWeb(newpdf);
+    } else {
+      saveFile(pdfName, fileBytes);
+    }
+  }
+
+  void saveFile(String name, List<int> pdfBytes) async {
+    try {
+      final outputPdfFile = await FilePicker.platform.saveFile(
+        dialogTitle: 'Save as PDF',
+        fileName: 'name.pdf',
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+      );
+
+      if (outputPdfFile != null) {
+        final pdfFile = File(outputPdfFile);
+        await pdfFile.writeAsBytes(pdfBytes);
+        OpenFile.open(pdfFile.path); // Open the saved PDF file
+      } else {
+        print("User canceled the file save dialog.");
+      }
+    } catch (e) {
+      print("Error saving PDF: $e");
     }
   }
 }
