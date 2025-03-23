@@ -5,8 +5,8 @@
 import FlutterMacOS
 import Foundation
 
-import file_selector_macos
 import file_picker
+import file_selector_macos
 import open_file_mac
 import path_provider_foundation
 import printing

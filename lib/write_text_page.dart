@@ -93,6 +93,20 @@ class _WriteTextPageState extends State<WriteTextPage> {
               ),
             ),
             const SizedBox(
+              height: 5,
+            ),
+            ElevatedButton.icon(
+              onPressed: generateHTMLFile2,
+              icon: const Icon(Icons.chat),
+              label: const Text('Generate PDF Flutter HTML To PDF tool'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 15,
+                ),
+              ),
+            ),
+            const SizedBox(
               height: 20,
             ),
           ],
@@ -111,6 +125,13 @@ class _WriteTextPageState extends State<WriteTextPage> {
   void generateHTMLFile() {
     if (textEditingController.text.isNotEmpty) {
       _pdfService.generatePdfFromHTMLText(
+          textEditingController.text, 'html_pdf');
+    }
+  }
+
+  void generateHTMLFile2() {
+    if (textEditingController.text.isNotEmpty) {
+      _pdfService.generatePdfFromHTMLText2(
           textEditingController.text, 'html_pdf');
     }
   }

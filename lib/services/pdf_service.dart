@@ -1,20 +1,15 @@
-import 'dart:html' as html;
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:htmltopdfwidgets/htmltopdfwidgets.dart';
 import 'package:open_file/open_file.dart';
-import 'dart:typed_data';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
-import 'package:file_selector/file_selector.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:printing/printing.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class PdfService {
   // Generate PDF document (works on all platforms)
@@ -33,22 +28,22 @@ class PdfService {
               pw.Header(
                 level: 0,
                 child: pw.Text('Sample PDF Report',
-                  style: pw.TextStyle(
-                    fontSize: 24,
-                    fontWeight: pw.FontWeight.bold,
-                    color: PdfColors.blue800
-                  )
-                ),
+                    style: pw.TextStyle(
+                        fontSize: 24,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.blue800)),
               ),
               pw.Paragraph(
-                text: 'Generated on: ${DateTime.now().toString().split('.')[0]}',
+                text:
+                    'Generated on: ${DateTime.now().toString().split('.')[0]}',
                 style: pw.TextStyle(
                   fontStyle: pw.FontStyle.italic,
                 ),
               ),
               pw.Header(level: 1, text: '1. Introduction'),
               pw.Paragraph(
-                text: 'This is a sample PDF document generated from HTML template. It demonstrates various formatting options including sections, tables, images, and text styling.',
+                text:
+                    'This is a sample PDF document generated from HTML template. It demonstrates various formatting options including sections, tables, images, and text styling.',
               ),
               pw.Header(level: 1, text: '2. Data Table Example'),
               pw.Table.fromTextArray(
@@ -80,7 +75,8 @@ class PdfService {
               pw.Header(level: 1, text: '3. Text Formatting Examples'),
               pw.Bullet(text: 'Bold text for emphasis'),
               pw.Bullet(text: 'Regular text for normal content'),
-              pw.Bullet(text: 'Colored text for highlighting important information'),
+              pw.Bullet(
+                  text: 'Colored text for highlighting important information'),
               pw.Bullet(text: 'Underlined text for specific details'),
               pw.SizedBox(height: 20),
               pw.Footer(
@@ -103,7 +99,8 @@ class PdfService {
   }
 
   // Check if running on desktop platform
-  bool get isDesktop => !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+  bool get isDesktop =>
+      !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
 
   // Platform-specific method to save and return the PDF file
   Future<File?> generatePdfFromHtml(String htmlContent, String fileName) async {
@@ -190,6 +187,10 @@ class PdfService {
     final pdf = await generatePdfDocument(htmlContent);
     final bytes = await pdf.save();
 
+    savePDFOnDevice(bytes, fileName);
+  }
+
+  void savePDFOnDevice(Uint8List bytes, String fileName) async {
     if (kIsWeb) {
       // Web code remains the same
       // For web, use Printing package to download
@@ -360,6 +361,7 @@ class PdfService {
     </html>
     ''';
   }
+
   // View PDF - platform specific
   Future<void> openPdf(File? file) async {
     if (file == null) {
@@ -413,7 +415,8 @@ class PdfService {
 
       if (isDesktop) {
         // For desktop platforms, save the file instead of printing
-        final String fileName = 'sample_report_${DateTime.now().millisecondsSinceEpoch}';
+        final String fileName =
+            'sample_report_${DateTime.now().millisecondsSinceEpoch}';
 
         if (Platform.isMacOS) {
           // For macOS, save to a temporary file and open it
@@ -471,21 +474,7 @@ class PdfService {
           return widgets;
         }));
     final fileBytes = await newpdf.save();
-    if (kIsWeb) {
-      await savePdfWeb(newpdf);
-    } else {
-      saveFile(pdfName, fileBytes);
-    }
-  }
-
-  Future<void> savePdfWeb(Document pdf) async {
-    final Uint8List pdfBytes = await pdf.save();
-    final blob = html.Blob([pdfBytes]);
-    final url = html.Url.createObjectUrlFromBlob(blob);
-    html.AnchorElement(href: url)
-      ..setAttribute("download", "markdown_output.pdf")
-      ..click();
-    html.Url.revokeObjectUrl(url);
+    savePDFOnDevice(fileBytes, pdfName);
   }
 
   void generatePdfFromHTMLText(String text, String pdfName) async {
@@ -497,31 +486,17 @@ class PdfService {
           return widgets;
         }));
     final fileBytes = await newpdf.save();
-    if (kIsWeb) {
-      await savePdfWeb(newpdf);
-    } else {
-      saveFile(pdfName, fileBytes);
-    }
+    savePDFOnDevice(fileBytes, pdfName);
   }
 
-  void saveFile(String name, List<int> pdfBytes) async {
-    try {
-      final outputPdfFile = await FilePicker.platform.saveFile(
-        dialogTitle: 'Save as PDF',
-        fileName: 'name.pdf',
-        type: FileType.custom,
-        allowedExtensions: ['pdf'],
-      );
-
-      if (outputPdfFile != null) {
-        final pdfFile = File(outputPdfFile);
-        await pdfFile.writeAsBytes(pdfBytes);
-        OpenFile.open(pdfFile.path); // Open the saved PDF file
-      } else {
-        print("User canceled the file save dialog.");
-      }
-    } catch (e) {
-      print("Error saving PDF: $e");
-    }
+  void generatePdfFromHTMLText2(String text, String pdfName) async {
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async {
+        return await Printing.convertHtml(
+          format: format,
+          html: text,
+        );
+      },
+    );
   }
 }
