@@ -41,44 +41,15 @@ class _WriteTextPageState extends State<WriteTextPage> {
             const SizedBox(
               height: 25,
             ),
-            ElevatedButton.icon(
-              onPressed: addMarkdownExample,
-              icon: const Icon(Icons.chat),
-              label: const Text('MarkDown Example'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 15,
-                ),
-              ),
-            ),
-            const SizedBox(
-              height: 5,
-            ),
-            ElevatedButton.icon(
-              onPressed: generateMarkdownFile,
-              icon: const Icon(Icons.chat),
-              label: const Text('Generate PDF from MarkDown'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 15,
-                ),
-              ),
-            ),
-            const SizedBox(
-              height: 25,
-            ),
-            ElevatedButton.icon(
+            ElevatedButton(
               onPressed: addHtmlExample,
-              icon: const Icon(Icons.chat),
-              label: const Text('HTML Example'),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 20,
                   vertical: 15,
                 ),
               ),
+              child: const Text('HTML Example'),
             ),
             const SizedBox(
               height: 5,
@@ -112,7 +83,7 @@ class _WriteTextPageState extends State<WriteTextPage> {
               ElevatedButton.icon(
                 onPressed: generateHTMLFile3,
                 icon: const Icon(Icons.chat),
-                label: const Text('Generate PDF Flutter HTML To PDF tool'),
+                label: const Text('Preview in Flutter WebView And Print'),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,
