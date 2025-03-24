@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:pdf_generator_app/services/pdf_service.dart';
+import 'package:pdf_generator_app/web_to_pdf_page.dart';
 
 class WriteTextPage extends StatefulWidget {
   const WriteTextPage({super.key});
@@ -106,6 +108,18 @@ class _WriteTextPageState extends State<WriteTextPage> {
                 ),
               ),
             ),
+            if (!kIsWeb)
+              ElevatedButton.icon(
+                onPressed: generateHTMLFile3,
+                icon: const Icon(Icons.chat),
+                label: const Text('Generate PDF Flutter HTML To PDF tool'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 15,
+                  ),
+                ),
+              ),
             const SizedBox(
               height: 20,
             ),
@@ -136,9 +150,19 @@ class _WriteTextPageState extends State<WriteTextPage> {
     }
   }
 
+  void generateHTMLFile3() {
+    if (textEditingController.text.isNotEmpty) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) =>
+              WebToPdfPage(htmlContent: textEditingController.text),
+        ),
+      );
+    }
+  }
+
   void addMarkdownExample() {
-    textEditingController.text =
-    '''markdown
+    textEditingController.text = '''markdown
     # Heading 1
     ## Heading 2
     ### Heading 3
@@ -205,9 +229,9 @@ class _WriteTextPageState extends State<WriteTextPage> {
     <p style="color: red;">This is a red paragraph using HTML.</p>
     ''';
   }
+
   void addHtmlExample() {
-    textEditingController.text =
-    '''<!DOCTYPE html>
+    textEditingController.text = '''<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">

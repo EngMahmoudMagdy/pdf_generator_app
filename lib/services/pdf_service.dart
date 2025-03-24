@@ -492,10 +492,11 @@ class PdfService {
   void generatePdfFromHTMLText2(String text, String pdfName) async {
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async {
-        return await Printing.convertHtml(
-          format: format,
-          html: text,
-        );
+
+        final pdf = pw.Document();
+        final widgets = await HTMLToPdf().convert(text);
+        pdf.addPage(pw.MultiPage(build: (context) => widgets));
+        return await pdf.save();
       },
     );
   }
