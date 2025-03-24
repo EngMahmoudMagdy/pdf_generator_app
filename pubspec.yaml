@@ -19,7 +19,7 @@ dependencies:
   url_launcher: ^6.1.12
   file_picker: ^9.2.1
   html: ^0.15.4
-  flutter_html: ^3.0.0-beta.2
+  flutter_html: ^3.0.0
   screenshot: ^2.1.0
   htmltopdfwidgets: ^1.0.9
   webview_flutter: ^4.10.0

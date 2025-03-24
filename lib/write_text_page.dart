@@ -80,17 +80,22 @@ class _WriteTextPageState extends State<WriteTextPage> {
               ),
             ),
             if (!kIsWeb)
-              ElevatedButton.icon(
-                onPressed: generateHTMLFile3,
-                icon: const Icon(Icons.chat),
-                label: const Text('Preview in Flutter WebView And Print'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 15,
+              ...[
+                const SizedBox(
+                  height: 5,
+                ),
+                ElevatedButton.icon(
+                  onPressed: generateHTMLFile3,
+                  icon: const Icon(Icons.chat),
+                  label: const Text('Preview in Flutter WebView And Print'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 15,
+                    ),
                   ),
                 ),
-              ),
+              ]
             const SizedBox(
               height: 20,
             ),
